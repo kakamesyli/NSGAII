@@ -134,6 +134,7 @@ def non_dominate_sort(pop_asm, f_num):
     rank_asm = []
     rank_asm_temp = []
     pareto_rank = 1
+    flag = 0
     for pop_i in pop_asm:
         for pop_j in pop_asm:
             less = 0;
@@ -152,18 +153,22 @@ def non_dominate_sort(pop_asm, f_num):
                 pop_i.dom_asm.append(pop_j)
         if pop_i.dom_num == 0:
                 pop_i.pareto_rank = pareto_rank
-                rank_asm.append(pop_i)
-    while (len(rank_asm) != 0):
-        for rank_ele in rank_asm:
-            rank_asm_temp = []
+                rank_asm_temp.append(pop_i)
+                rank_asm.append(rank_asm_temp)
+    while (len(rank_asm[pareto_rank-1]) != 0 and flag == 0):
+        rank_asm_temp = []
+        for rank_ele in rank_asm[pareto_rank-1]:
             if (len(rank_ele.dom_asm) != 0):
                 for dom_asm_ele in rank_ele.dom_asm:
                     dom_asm_ele.dom_num = dom_asm_ele.dom_num - 1
                     if dom_asm_ele.dom_num == 0:
                         dom_asm_ele.pareto_rank = pareto_rank + 1
                         rank_asm_temp.append(dom_asm_ele)
-                        rank_asm.append(rank_asm_temp)
-        pareto_rank = pareto_rank + 1
+                rank_asm.append(rank_asm_temp)
+                pareto_rank = pareto_rank + 1
+            else:
+                flag = 1
+        
     return rank_asm
 def crowding_distance_sort(rank_asm, f_num):
     # temp = pop_asm.sorted(key=lambda x:x.pareto_rank, reverse=False);
@@ -280,5 +285,4 @@ if __name__ == "__main__":
     chromo = Chromo(pop_num, x_min, x_max, x_num, f_num, fun_name)
     chromo_domi = non_dominate_sort(chromo.pop_asm, f_num)
     chromo_domi_crowding = crowding_distance_sort(chromo_domi, f_num)
-    
     

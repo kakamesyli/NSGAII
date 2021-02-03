@@ -176,12 +176,12 @@ def crowding_distance_sort(rank_asm, f_num):
         for func in range(f_num):
             func_temp = []
             rank_asm_crowding = []
-            func_temp[pareto_rank] = sorted(rank_asm[pareto_rank], key=lambda x:x.value[func], reverse=False)
+            func_temp.append(sorted(rank_asm[pareto_rank], key=lambda x:x.value[func], reverse=False))
             current_index = 0
             fmin = func_temp[pareto_rank][0].value[func]
             fmax = func_temp[pareto_rank][-1].value[func]
-            func_temp[pareto_rank][0] = float('Inf')
-            func_temp[pareto_rank][-1] = float('Inf')
+            func_temp[pareto_rank][0].crowding = float('Inf')
+            func_temp[pareto_rank][-1].crowding = float('Inf')
             for i in range(1, len(func_temp[pareto_rank]) - 2):  # for pop in func_temp[pareto_rank][1, -2]:
                 next_fun_value = func_temp[pareto_rank][i - 1].value[func]  # next_fun_value = func_temp[pareto_rank][pop.index()-1].value[func]
                 pre_fun_value = func_temp[pareto_rank][i + 1].value[func]  # pre_fun_value = func_temp[pareto_rank][pop.index()+1].value[func]
@@ -191,8 +191,9 @@ def crowding_distance_sort(rank_asm, f_num):
                     func_temp[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding + (next_fun_value - pre_fun_value) / (fmax - fmin)
         func_temp[pareto_rank] = sorted(func_temp[pareto_rank], key=lambda x:x.index, reverse=False)
         for i in range(len(func_temp[pareto_rank])):
-            rank_asm_crowding[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding
-        return rank_asm_crowding
+            #rank_asm_crowding[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding
+            rank_asm[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding
+    return rank_asm_crowding
         
 def elitsm(pop_num, chromo2):
     chromo_temp = sorted(chromo2, key=lambda x:x.pareto_rank, reverse=False)

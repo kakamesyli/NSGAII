@@ -3,9 +3,6 @@
 Created on 202101011
 @author: think
 '''
-# from numpy.lib.user_array import temp
-# from numpy.random.mtrand import pareto
-# from _ctypes_test import func
 
 '''
 Created on 20210111
@@ -13,7 +10,7 @@ Created on 20210111
 '''
 import random
 import operator
-
+import copy
 
 class Pop(object):
 
@@ -174,9 +171,10 @@ def crowding_distance_sort(rank_asm, f_num):
     # temp = pop_asm.sorted(key=lambda x:x.pareto_rank, reverse=False);
     for pareto_rank in range(len(rank_asm)):
         for func in range(f_num):
-            func_temp = []
             rank_asm_crowding = []
-            func_temp.append(sorted(rank_asm[pareto_rank], key=lambda x:x.value[func], reverse=False))
+            func_temp = copy.deepcopy(rank_asm)
+            #func_temp.append(sorted(rank_asm[pareto_rank], key=lambda x:x.value[func], reverse=False))
+            func_temp[pareto_rank] = sorted(func_temp[pareto_rank], key=lambda x:x.value[func], reverse=False)
             current_index = 0
             fmin = func_temp[pareto_rank][0].value[func]
             fmax = func_temp[pareto_rank][-1].value[func]
@@ -193,16 +191,30 @@ def crowding_distance_sort(rank_asm, f_num):
         for i in range(len(func_temp[pareto_rank])):
             #rank_asm_crowding[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding
             rank_asm[pareto_rank][i].crowding = func_temp[pareto_rank][i].crowding
-    return rank_asm_crowding
+    return rank_asm
         
 def elitsm(pop_num, chromo2):
-    chromo_temp = sorted(chromo2, key=lambda x:x.pareto_rank, reverse=False)
+    chromo_temp = copy.deepcopy(chromo2, None, [])
     pre_ind = 0
-    current_rank = 1
-    current_ind = 1
+    current_rank = 0
+    current_ind = 0
     ind = []
     current_rank_temp = []
     chromo_elit = []
+    
+    current_ind = len(chromo_temp[current_rank]) - 1
+    
+    while current_ind < pop_num:
+        chromo_elit.append(chromo_temp[current_rank][:])
+        current_rank = current_rank+1
+        pre_ind = current_ind
+        current_ind = current_ind + len(chromo_temp[current_rank])
+    
+    elit_temp = sorted(chromo_temp[current_rank],key = lambda x:x.crowding,reverse = False)
+    chromo_elit.append(elit_temp[0:(pop_num-1) - pre_ind])
+    '''
+    for pareto_rank in range(len(chromo_temp)):
+        current_ind = current_ind + len(chromo_temp[pareto_rank])
     for pop in chromo_temp:       
         if pop.pareto_rank == current_rank:
             current_ind = current_ind + 1
@@ -218,8 +230,10 @@ def elitsm(pop_num, chromo2):
         elif ind[i] > pop_num:
             for j in range(ind[i - 1], pop_num - ind[i - 1]):
                 chromo_elit.append(chromo_temp[j - 1])
-
-            '''
+           
+           
+           
+           
             current_rank_temp[current_rank].append(pop)
             if current_ind < pop_num and current_ind == pop_num:
                 chromo_elit.append(current_rank_temp[current_rank])
@@ -249,7 +263,8 @@ def elitsm(pop_num, chromo2):
         '''
     return chromo_elit
 
-            
+def tournament_selection(chromo):
+          
 def obj_fun(x, x_num, fun_name):
     if operator.eq(fun_name, 'ZDT1'):
         f = []
@@ -271,9 +286,9 @@ class Person():
 
 def personSort():
     persons = [Person(age, name) for (age, name) in [(12, "lili"), (18, "lulu"), (16, "kaka"), (12, "xixi")]]
-    persons.sort(key=lambda x:x.name, reverse=False);
+    persons.sort(key=lambda x:x.name, reverse=False)
     for element in persons:
-        print (element.age, ":", element.name);
+        print (element.age, ":", element.name)
 
 
 if __name__ == "__main__":
@@ -286,4 +301,5 @@ if __name__ == "__main__":
     chromo = Chromo(pop_num, x_min, x_max, x_num, f_num, fun_name)
     chromo_domi = non_dominate_sort(chromo.pop_asm, f_num)
     chromo_domi_crowding = crowding_distance_sort(chromo_domi, f_num)
+    chromo_domi_crowding_elit = elitsm(pop_num, chromo_domi_crowding)
     

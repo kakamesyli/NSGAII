@@ -1,8 +1,10 @@
 #!usr/bin/env python
+# -*- coding:utf-8 -*-
 '''
 Created on 202101011
 @author: think
 '''
+
 
 '''
 Created on 20210111
@@ -11,6 +13,8 @@ Created on 20210111
 import random
 import operator
 import copy
+import math
+import matplotlib.pyplot as plt
 
 class Pop(object):
 
@@ -26,6 +30,8 @@ class Pop(object):
         self.crowding = 0;
         self.dom_num = 0;
         self.dom_asm = [];
+        self.x_max = x_max
+        self.x_min = x_min
 
     def cal_var(self, x_min, x_max):
         self.var.append(x_min + (x_max - x_min) * random.random());
@@ -263,8 +269,103 @@ def elitsm(pop_num, chromo2):
         '''
     return chromo_elit
 
+
 def tournament_selection(chromo):
-          
+    tournament = 2
+    #k = round(len(chromo)/2)
+    chromo_len = len(chromo.pop_asm)
+    tournament_index_temp = [None for x in range(tournament)]
+    tournament_chromo = []
+    chromo_temp = []
+    chromo_rank_temp = []
+    for i in range(chromo_len):
+        for j in range(tournament):
+            tournament_index_temp[j] = round((chromo_len-1) * random.random())
+            if j>1:
+                while tournament_index_temp[j] == tournament_index_temp[j-1]:
+                    tournament_index_temp[j] = round((chromo_len-1) * random.random())
+            chromo_temp.append(copy.deepcopy(chromo.pop_asm[tournament_index_temp[j]]))
+        
+        min_rank_chromo = min(chromo_temp,key = lambda x:x.pareto_rank)
+        min_rank = min_rank_chromo.pareto_rank
+        for k in range(tournament):
+            if chromo_temp[k].pareto_rank == min_rank:
+                chromo_rank_temp.append(chromo_temp[k])
+        if len(chromo_rank_temp) == 1:
+            tournament_chromo.append(chromo_rank_temp)
+        else:
+            max_crowding_index = chromo_rank_temp.index(max(chromo_rank_temp,key = lambda x:x.crowding))
+            tournament_chromo.append(chromo_rank_temp[max_crowding_index])
+    return tournament_chromo
+
+def cross_mutation(chromo,x_num,x_max,x_min):
+    pc = 0.1
+    pm = 0.1
+    n = 1
+    fun_name = 'ZDT1'
+    chromo_len = len(chromo)
+    x1_c_chromo = []
+    x2_c_chromo = []
+    v1_c_chromo = []
+    v2_c_chromo = []
+    chromo_cross_mutation = []
+    for i in range(math.floor(chromo_len/2)):
+        x1_index = round(chromo_len * random.random())
+        x2_index = round(chromo_len * random.random())
+        while x1_index == x2_index:
+            x2_index = round(chromo_len * random.random())
+        #x1_f_chromo = copy.deepcopy(chromo[x1_index], None, [])
+        #x2_f_chromo = copy.deepcopy(chromo[x2_index], None, [])
+        x1_f_chromo = chromo[x1_index].var
+        x2_f_chromo = chromo[x2_index].var
+        if random.random()<pc:
+            for j in range(x_num):
+                u1 = random.random()#u1=[0,1)
+                if u1 <= 0.5:
+                    beta = (2*u1) ^ (1/n+1)
+                else:
+                    beta = (1/(2-2*u1)) ^ (1/n+1)
+                x1_c_chromo.append(0.5*(x2_f_chromo[j]+x1_f_chromo[j]) - 0.5*beta*(x2_f_chromo[j]-x1_f_chromo[j]))
+                if x1_c_chromo > x_max:
+                    x1_c_chromo[-1] = x_max
+                elif x1_c_chromo < x_min:
+                    x1_c_chromo[-1] = x_min
+                x2_c_chromo.append(0.5*(x2_f_chromo[j]+x1_f_chromo[j]) + 0.5*beta*(x2_f_chromo[j]-x1_f_chromo[j]))
+                if x2_c_chromo > x_max:
+                    x2_c_chromo[-1] = x_max
+                elif x2_c_chromo < x_min:
+                    x2_c_chromo[-1] = x_min
+                v1_c_chromo.append(obj_fun(x1_c_chromo, x_num, fun_name))
+                v2_c_chromo.append(obj_fun(x2_c_chromo, x_num, fun_name))
+        if random.random()<pm:
+            for j in range(x_num):
+                u2 = random.random()
+                if u2 <= 0.5:
+                    deta = (2*u2) ^ (1/(n+1))
+                else:
+                    deta = (1-(2-2*u2)) ^ (1/(n+1))
+                x1_c_chromo[j] = x1_c_chromo[j] + deta
+                if x1_c_chromo[j] > x_max:
+                    x1_c_chromo[j] = x_max
+                elif x1_c_chromo < x_min:
+                    x1_c_chromo[j] = x_min
+                v1_c_chromo[:] = obj_fun(x1_c_chromo, x_num, fun_name)
+        if random.random()<pm:
+            for j in range(x_num):
+                u2 = random.random()
+                if u2 <= 0.5:
+                    deta = (2*u2) ^ (1/(n+1))
+                else:
+                    deta = (1-(2-2*u2)) ^ (1/(n+1))
+                x2_c_chromo[j] = x2_c_chromo[j] + deta
+                if x2_c_chromo[j] > x_max:
+                    x2_c_chromo[j] = x_max
+                elif x2_c_chromo < x_min:
+                    x2_c_chromo[j] = x_min
+                v2_c_chromo[:] = obj_fun(x2_c_chromo, x_num, fun_name)
+        chromo[x1_index].value = v1_c_chromo
+        chromo[x2_index].value = v2_c_chromo
+    return chromo
 def obj_fun(x, x_num, fun_name):
     if operator.eq(fun_name, 'ZDT1'):
         f = []
@@ -293,13 +394,28 @@ def personSort():
 
 if __name__ == "__main__":
     x_min = 0
-    x_max = 100
+    x_max = 1
     x_num = 100
-    f_num = 1
+    f_num = 2
     fun_name = 'ZDT1'
-    pop_num = 5
+    pop_num = 6
+    gen = 100
+    
     chromo = Chromo(pop_num, x_min, x_max, x_num, f_num, fun_name)
     chromo_domi = non_dominate_sort(chromo.pop_asm, f_num)
     chromo_domi_crowding = crowding_distance_sort(chromo_domi, f_num)
-    chromo_domi_crowding_elit = elitsm(pop_num, chromo_domi_crowding)
+    chromo_select = tournament_selection(chromo)
+    chromo_cross_mutation = cross_mutation(chromo_select, x_num, x_max, x_min)
+    for i in range(gen):
+        chromo_parent = tournament_selection(chromo_cross_mutation)
+        chromo_offspring = cross_mutation(chromo_parent, x_num, x_max, x_min)
+        chromo_combine = chromo_parent.extend(chromo_offspring)
+        chromo1_combine = non_dominate_sort(chromo_combine, f_num)
+        chromo2_combine = crowding_distance_sort(chromo1_combine, f_num)
+        chromo_result = elitsm(pop_num, chromo2_combine)
+        if i % 10 == 0:
+            print('%d generation has completed!' % i)
+    if f_num == 2:
+        plt.plot(chromo_result.value[1],chromo_result.value[2])
+        
     

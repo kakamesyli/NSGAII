@@ -280,10 +280,10 @@ def tournament_selection(chromo):
     chromo_rank_temp = []
     for i in range(chromo_len):
         for j in range(tournament):
-            tournament_index_temp[j] = round((chromo_len-1) * random.random())
-            if j>1:
+            tournament_index_temp[j] = int(round((chromo_len-1) * random.random()))
+            if j>0:
                 while tournament_index_temp[j] == tournament_index_temp[j-1]:
-                    tournament_index_temp[j] = round((chromo_len-1) * random.random())
+                    tournament_index_temp[j] = int(round((chromo_len-1) * random.random()))
             chromo_temp.append(copy.deepcopy(chromo.pop_asm[tournament_index_temp[j]]))
         
         min_rank_chromo = min(chromo_temp,key = lambda x:x.pareto_rank)
@@ -291,8 +291,9 @@ def tournament_selection(chromo):
         for k in range(tournament):
             if chromo_temp[k].pareto_rank == min_rank:
                 chromo_rank_temp.append(chromo_temp[k])
+        del chromo_temp[:]
         if len(chromo_rank_temp) == 1:
-            tournament_chromo.append(chromo_rank_temp)
+            tournament_chromo.append(chromo_rank_temp[:])
         else:
             max_crowding_index = chromo_rank_temp.index(max(chromo_rank_temp,key = lambda x:x.crowding))
             tournament_chromo.append(chromo_rank_temp[max_crowding_index])
@@ -309,11 +310,11 @@ def cross_mutation(chromo,x_num,x_max,x_min):
     v1_c_chromo = []
     v2_c_chromo = []
     chromo_cross_mutation = []
-    for i in range(math.floor(chromo_len/2)):
-        x1_index = round(chromo_len * random.random())
-        x2_index = round(chromo_len * random.random())
+    for i in range(chromo_len//2):
+        x1_index = int(round((chromo_len-1) * random.random()))
+        x2_index = int(round((chromo_len-1) * random.random()))
         while x1_index == x2_index:
-            x2_index = round(chromo_len * random.random())
+            x2_index = int(round((chromo_len-1) * random.random()))
         #x1_f_chromo = copy.deepcopy(chromo[x1_index], None, [])
         #x2_f_chromo = copy.deepcopy(chromo[x2_index], None, [])
         x1_f_chromo = chromo[x1_index].var
@@ -418,4 +419,5 @@ if __name__ == "__main__":
     if f_num == 2:
         plt.plot(chromo_result.value[1],chromo_result.value[2])
         
+    
     

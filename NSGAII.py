@@ -22,22 +22,23 @@ class Pop(object):
         self.index = pop_index;  # #code
         self.var = [];  #
         for i in range(x_num):
-            self.cal_var(x_min, x_max);
-        self.value = [];  #
-        for j in range(f_num):
-            self.cal_output(self.var, x_num, fun_name);
-        self.pareto_rank = 0;
-        self.crowding = 0;
-        self.dom_num = 0;
-        self.dom_asm = [];
+            self.cal_var(x_min, x_max)
+        self.value = []  #
+        #for j in range(f_num):
+        self.cal_output(self.var, x_num, fun_name)
+        self.pareto_rank = 0
+        self.crowding = 0
+        self.dom_num = 0
+        self.dom_asm = []
         self.x_max = x_max
         self.x_min = x_min
 
     def cal_var(self, x_min, x_max):
-        self.var.append(x_min + (x_max - x_min) * random.random());
+        self.var.append(x_min + (x_max - x_min) * random.random())
     
     def cal_output(self, x, x_num, fun_name):
-        self.value.append(obj_fun(x, x_num, fun_name));
+        self.value[:] = obj_fun(x, x_num, fun_name)
+        #self.value.append(obj_fun(x, x_num, fun_name));
     
     def create_rank_asm(self, Pop):
         self.rank_asm.append(Pop);
@@ -140,6 +141,7 @@ def non_dominate_sort(pop_asm, f_num):
     flag = 0
     for pop_i in pop_asm:
         for pop_j in pop_asm:
+            #dom_flag = 0
             less = 0;
             equal = 0;
             greater = 0;
@@ -150,14 +152,23 @@ def non_dominate_sort(pop_asm, f_num):
                     equal = equal + 1
                 else:
                     greater = greater + 1
+                    
+            if (greater == 0 and equal != f_num):
+                pop_i.dom_asm.append(pop_j)
+            elif (less == 0 and equal != f_num):
+                pop_i.dom_num = pop_i.dom_num + 1
+            '''
             if (less == 0 and equal != f_num):
                 pop_i.dom_num = pop_i.dom_num + 1
             elif (greater == 0 and equal != f_num):
                 pop_i.dom_asm.append(pop_j)
+            '''
         if pop_i.dom_num == 0:
-                pop_i.pareto_rank = pareto_rank
-                rank_asm_temp.append(pop_i)
-                rank_asm.append(rank_asm_temp)
+            pop_i.pareto_rank = pareto_rank
+            rank_asm_temp.append(pop_i)
+    rank_asm.append(copy.deepcopy(rank_asm_temp, None, []))
+            #rank_asm.append(copy.deepcopy(pop_i, None, []))
+        
     while (len(rank_asm[pareto_rank-1]) != 0 and flag == 0):
         rank_asm_temp = []
         for rank_ele in rank_asm[pareto_rank-1]:
@@ -165,7 +176,7 @@ def non_dominate_sort(pop_asm, f_num):
                 for dom_asm_ele in rank_ele.dom_asm:
                     dom_asm_ele.dom_num = dom_asm_ele.dom_num - 1
                     if dom_asm_ele.dom_num == 0:
-                        dom_asm_ele.pareto_rank = pareto_rank + 1
+                        dom_asm_ele.pareto_rank = pareto_rank + @@
                         rank_asm_temp.append(dom_asm_ele)
                 rank_asm.append(rank_asm_temp)
                 pareto_rank = pareto_rank + 1
@@ -273,7 +284,7 @@ def elitsm(pop_num, chromo2):
 def tournament_selection(chromo):
     tournament = 2
     #k = round(len(chromo)/2)
-    chromo_len = len(chromo.pop_asm)
+    chromo_len = len(chromo)
     tournament_index_temp = [None for x in range(tournament)]
     tournament_chromo = []
     chromo_temp = []
@@ -284,7 +295,7 @@ def tournament_selection(chromo):
             if j>0:
                 while tournament_index_temp[j] == tournament_index_temp[j-1]:
                     tournament_index_temp[j] = int(round((chromo_len-1) * random.random()))
-            chromo_temp.append(copy.deepcopy(chromo.pop_asm[tournament_index_temp[j]]))
+            chromo_temp.append(copy.deepcopy(chromo[tournament_index_temp[j]]))
         
         min_rank_chromo = min(chromo_temp,key = lambda x:x.pareto_rank)
         min_rank = min_rank_chromo.pareto_rank
@@ -293,14 +304,15 @@ def tournament_selection(chromo):
                 chromo_rank_temp.append(chromo_temp[k])
         del chromo_temp[:]
         if len(chromo_rank_temp) == 1:
-            tournament_chromo.append(chromo_rank_temp[:])
+            tournament_chromo.append(chromo_rank_temp[0])
         else:
             max_crowding_index = chromo_rank_temp.index(max(chromo_rank_temp,key = lambda x:x.crowding))
             tournament_chromo.append(chromo_rank_temp[max_crowding_index])
+        del chromo_rank_temp[:]
     return tournament_chromo
 
 def cross_mutation(chromo,x_num,x_max,x_min):
-    pc = 0.1
+    pc = 1
     pm = 0.1
     n = 1
     fun_name = 'ZDT1'
@@ -323,47 +335,47 @@ def cross_mutation(chromo,x_num,x_max,x_min):
             for j in range(x_num):
                 u1 = random.random()#u1=[0,1)
                 if u1 <= 0.5:
-                    beta = (2*u1) ^ (1/n+1)
+                    beta = (2*u1) ** (1/n+1)
                 else:
-                    beta = (1/(2-2*u1)) ^ (1/n+1)
+                    beta = (1/(2-2*u1)) ** (1/n+1)
                 x1_c_chromo.append(0.5*(x2_f_chromo[j]+x1_f_chromo[j]) - 0.5*beta*(x2_f_chromo[j]-x1_f_chromo[j]))
-                if x1_c_chromo > x_max:
+                if x1_c_chromo[-1] > x_max:
                     x1_c_chromo[-1] = x_max
-                elif x1_c_chromo < x_min:
+                elif x1_c_chromo[-1] < x_min:
                     x1_c_chromo[-1] = x_min
                 x2_c_chromo.append(0.5*(x2_f_chromo[j]+x1_f_chromo[j]) + 0.5*beta*(x2_f_chromo[j]-x1_f_chromo[j]))
-                if x2_c_chromo > x_max:
+                if x2_c_chromo[-1] > x_max:
                     x2_c_chromo[-1] = x_max
-                elif x2_c_chromo < x_min:
+                elif x2_c_chromo[-1] < x_min:
                     x2_c_chromo[-1] = x_min
-                v1_c_chromo.append(obj_fun(x1_c_chromo, x_num, fun_name))
-                v2_c_chromo.append(obj_fun(x2_c_chromo, x_num, fun_name))
+            v1_c_chromo = obj_fun(x1_c_chromo, x_num, fun_name)
+            v2_c_chromo = obj_fun(x2_c_chromo, x_num, fun_name)
         if random.random()<pm:
             for j in range(x_num):
                 u2 = random.random()
                 if u2 <= 0.5:
-                    deta = (2*u2) ^ (1/(n+1))
+                    deta = (2*u2) ** (1/(n+1))
                 else:
-                    deta = (1-(2-2*u2)) ^ (1/(n+1))
+                    deta = (1-(2-2*u2)) ** (1/(n+1))
                 x1_c_chromo[j] = x1_c_chromo[j] + deta
                 if x1_c_chromo[j] > x_max:
                     x1_c_chromo[j] = x_max
-                elif x1_c_chromo < x_min:
+                elif x1_c_chromo[j] < x_min:
                     x1_c_chromo[j] = x_min
-                v1_c_chromo[:] = obj_fun(x1_c_chromo, x_num, fun_name)
+            v1_c_chromo = obj_fun(x1_c_chromo, x_num, fun_name)
         if random.random()<pm:
             for j in range(x_num):
                 u2 = random.random()
                 if u2 <= 0.5:
-                    deta = (2*u2) ^ (1/(n+1))
+                    deta = (2*u2) ** (1/(n+1))
                 else:
-                    deta = (1-(2-2*u2)) ^ (1/(n+1))
+                    deta = (1-(2-2*u2)) ** (1/(n+1))
                 x2_c_chromo[j] = x2_c_chromo[j] + deta
                 if x2_c_chromo[j] > x_max:
                     x2_c_chromo[j] = x_max
-                elif x2_c_chromo < x_min:
+                elif x2_c_chromo[j] < x_min:
                     x2_c_chromo[j] = x_min
-                v2_c_chromo[:] = obj_fun(x2_c_chromo, x_num, fun_name)
+            v2_c_chromo = obj_fun(x2_c_chromo, x_num, fun_name)
         chromo[x1_index].value = v1_c_chromo
         chromo[x2_index].value = v2_c_chromo
     return chromo
@@ -376,7 +388,7 @@ def obj_fun(x, x_num, fun_name):
             s = s + x[i]
         g = 1 + 9 * (s / (x_num - 1))
         f.append(g * (1 - (f[0] / g) ** 0.5))
-        return f;
+        return f
 
     
 class Person():
@@ -399,18 +411,18 @@ if __name__ == "__main__":
     x_num = 100
     f_num = 2
     fun_name = 'ZDT1'
-    pop_num = 6
+    pop_num = 2
     gen = 100
     
     chromo = Chromo(pop_num, x_min, x_max, x_num, f_num, fun_name)
     chromo_domi = non_dominate_sort(chromo.pop_asm, f_num)
     chromo_domi_crowding = crowding_distance_sort(chromo_domi, f_num)
-    chromo_select = tournament_selection(chromo)
+    chromo_select = tournament_selection(chromo.pop_asm)
     chromo_cross_mutation = cross_mutation(chromo_select, x_num, x_max, x_min)
     for i in range(gen):
         chromo_parent = tournament_selection(chromo_cross_mutation)
         chromo_offspring = cross_mutation(chromo_parent, x_num, x_max, x_min)
-        chromo_combine = chromo_parent.extend(chromo_offspring)
+        chromo_combine = chromo_parent+chromo_offspring
         chromo1_combine = non_dominate_sort(chromo_combine, f_num)
         chromo2_combine = crowding_distance_sort(chromo1_combine, f_num)
         chromo_result = elitsm(pop_num, chromo2_combine)
@@ -419,5 +431,3 @@ if __name__ == "__main__":
     if f_num == 2:
         plt.plot(chromo_result.value[1],chromo_result.value[2])
         
-    
-    

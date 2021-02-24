@@ -176,13 +176,12 @@ def non_dominate_sort(pop_asm, f_num):
                 for dom_asm_ele in rank_ele.dom_asm:
                     dom_asm_ele.dom_num = dom_asm_ele.dom_num - 1
                     if dom_asm_ele.dom_num == 0:
-                        dom_asm_ele.pareto_rank = pareto_rank + @@
-                        rank_asm_temp.append(dom_asm_ele)
-                rank_asm.append(rank_asm_temp)
-                pareto_rank = pareto_rank + 1
+                        dom_asm_ele.pareto_rank = pareto_rank+1
+                        rank_asm_temp.append(dom_asm_ele)                 
             else:
                 flag = 1
-        
+        pareto_rank = pareto_rank + 1
+        rank_asm.append(copy.deepcopy(rank_asm_temp,None,[]))
     return rank_asm
 def crowding_distance_sort(rank_asm, f_num):
     # temp = pop_asm.sorted(key=lambda x:x.pareto_rank, reverse=False);
@@ -430,4 +429,3 @@ if __name__ == "__main__":
             print('%d generation has completed!' % i)
     if f_num == 2:
         plt.plot(chromo_result.value[1],chromo_result.value[2])
-        

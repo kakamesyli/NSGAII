@@ -144,7 +144,6 @@ def non_dominate_sort(pop_asm, f_num):
     rank_asm = []
     rank_asm_temp = []
     pareto_rank = 1
-    flag=0
     for pop_i in pop_asm:
         pop_i.dom_asm = []
         pop_i.dom_num = 0
@@ -154,8 +153,6 @@ def non_dominate_sort(pop_asm, f_num):
             equal = 0;
             greater = 0;
             for k in range(f_num):
-                flag+=1
-                print(flag)
                 if (pop_i.value[k] < pop_j.value[k]):
                     less = less + 1
                 elif (pop_i.value[k] == pop_j.value[k]):
@@ -320,9 +317,9 @@ def tournament_selection(chromo):
     return tournament_chromo
 
 def cross_mutation(chromo,x_num,x_max,x_min):
-    pc = 0.5
-    pm = 1/x_num
-    n = 2
+    pc = 0.9
+    pm = 1/30
+    n = 1
     fun_name = 'ZDT1'
     chromo_len = len(chromo)
     x1_c_chromo = []
@@ -340,6 +337,8 @@ def cross_mutation(chromo,x_num,x_max,x_min):
         
         x1_f_chromo = chromo[x1_index].var
         x2_f_chromo = chromo[x2_index].var
+        v1_c_chromo = chromo[x1_index].value
+        v2_c_chromo = chromo[x2_index].value
         if random.random()<pc:
             for j in range(x_num):
                 u1 = random.random()#u1=[0,1)
@@ -385,9 +384,10 @@ def cross_mutation(chromo,x_num,x_max,x_min):
                 elif x2_c_chromo[j] < x_min:
                     x2_c_chromo[j] = x_min
             v2_c_chromo = obj_fun(x2_c_chromo, x_num, fun_name)
-        chromo_cross_mutation[x1_index].value = v1_c_chromo
-        chromo_cross_mutation[x2_index].value = v2_c_chromo
+        chromo_cross_mutation[x1_index].value[:] = v1_c_chromo
+        chromo_cross_mutation[x2_index].value[:] = v2_c_chromo
     return chromo_cross_mutation
+
 def obj_fun(x, x_num, fun_name):
     if operator.eq(fun_name, 'ZDT1'):
         f = []
@@ -417,7 +417,7 @@ def personSort():
 if __name__ == "__main__":
     x_min = 0
     x_max = 1
-    x_num = 100
+    x_num = 200
     f_num = 2
     fun_name = 'ZDT1'
     pop_num = 100

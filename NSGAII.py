@@ -42,6 +42,12 @@ class Pop(object):
     
     def create_rank_asm(self, Pop):
         self.rank_asm.append(Pop);
+    
+    def refresh(self):
+        self.pareto_rank = 0
+        self.crowding = 0
+        self.dom_num = 0
+        self.dom_asm = []
 
         
 class Chromo(object):
@@ -138,14 +144,18 @@ def non_dominate_sort(pop_asm, f_num):
     rank_asm = []
     rank_asm_temp = []
     pareto_rank = 1
-    flag = 0
+    flag=0
     for pop_i in pop_asm:
+        pop_i.dom_asm = []
+        pop_i.dom_num = 0
         for pop_j in pop_asm:
             #dom_flag = 0
             less = 0;
             equal = 0;
             greater = 0;
             for k in range(f_num):
+                flag+=1
+                print(flag)
                 if (pop_i.value[k] < pop_j.value[k]):
                     less = less + 1
                 elif (pop_i.value[k] == pop_j.value[k]):
@@ -153,23 +163,19 @@ def non_dominate_sort(pop_asm, f_num):
                 else:
                     greater = greater + 1
                     
-            if (greater == 0 and equal != f_num):
-                pop_i.dom_asm.append(pop_j)
-            elif (less == 0 and equal != f_num):
-                pop_i.dom_num = pop_i.dom_num + 1
-            '''
             if (less == 0 and equal != f_num):
                 pop_i.dom_num = pop_i.dom_num + 1
             elif (greater == 0 and equal != f_num):
                 pop_i.dom_asm.append(pop_j)
-            '''
+
         if pop_i.dom_num == 0:
             pop_i.pareto_rank = pareto_rank
             rank_asm_temp.append(pop_i)
-    rank_asm.append(copy.deepcopy(rank_asm_temp, None, []))
+    #rank_asm.append(copy.deepcopy(rank_asm_temp, None, []))
+    rank_asm.append(rank_asm_temp)
             #rank_asm.append(copy.deepcopy(pop_i, None, []))
         
-    while (len(rank_asm[pareto_rank-1]) != 0 and flag == 0):
+    while (len(rank_asm[pareto_rank-1]) != 0):
         rank_asm_temp = []
         for rank_ele in rank_asm[pareto_rank-1]:
             if (len(rank_ele.dom_asm) != 0):
@@ -177,18 +183,19 @@ def non_dominate_sort(pop_asm, f_num):
                     dom_asm_ele.dom_num = dom_asm_ele.dom_num - 1
                     if dom_asm_ele.dom_num == 0:
                         dom_asm_ele.pareto_rank = pareto_rank+1
-                        rank_asm_temp.append(dom_asm_ele)                 
-            else:
-                flag = 1
-        pareto_rank = pareto_rank + 1
-        rank_asm.append(copy.deepcopy(rank_asm_temp,None,[]))
+                        rank_asm_temp.append(dom_asm_ele)
+        pareto_rank += 1
+        if len(rank_asm_temp) == 0:
+            break
+        #rank_asm.append(copy.deepcopy(rank_asm_temp,None,[]))
+        rank_asm.append(rank_asm_temp)
     return rank_asm
 def crowding_distance_sort(rank_asm, f_num):
     # temp = pop_asm.sorted(key=lambda x:x.pareto_rank, reverse=False);
     for pareto_rank in range(len(rank_asm)):
         for func in range(f_num):
-            rank_asm_crowding = []
-            func_temp = copy.deepcopy(rank_asm)
+            #func_temp = copy.deepcopy(rank_asm) #dont change origin
+            func_temp = rank_asm
             #func_temp.append(sorted(rank_asm[pareto_rank], key=lambda x:x.value[func], reverse=False))
             func_temp[pareto_rank] = sorted(func_temp[pareto_rank], key=lambda x:x.value[func], reverse=False)
             current_index = 0
@@ -196,7 +203,7 @@ def crowding_distance_sort(rank_asm, f_num):
             fmax = func_temp[pareto_rank][-1].value[func]
             func_temp[pareto_rank][0].crowding = float('Inf')
             func_temp[pareto_rank][-1].crowding = float('Inf')
-            for i in range(1, len(func_temp[pareto_rank]) - 2):  # for pop in func_temp[pareto_rank][1, -2]:
+            for i in range(1, len(func_temp[pareto_rank]) - 1):  # for pop in func_temp[pareto_rank][1, -2]:
                 next_fun_value = func_temp[pareto_rank][i - 1].value[func]  # next_fun_value = func_temp[pareto_rank][pop.index()-1].value[func]
                 pre_fun_value = func_temp[pareto_rank][i + 1].value[func]  # pre_fun_value = func_temp[pareto_rank][pop.index()+1].value[func]
                 if fmax == fmin:
@@ -211,7 +218,7 @@ def crowding_distance_sort(rank_asm, f_num):
         
 def elitsm(pop_num, chromo2):
     chromo_temp = copy.deepcopy(chromo2, None, [])
-    pre_ind = 0
+    pre_ind = -1#match the length and index
     current_rank = 0
     current_ind = 0
     ind = []
@@ -221,13 +228,15 @@ def elitsm(pop_num, chromo2):
     current_ind = len(chromo_temp[current_rank]) - 1
     
     while current_ind < pop_num:
-        chromo_elit.append(chromo_temp[current_rank][:])
-        current_rank = current_rank+1
+        #chromo_elit.append(chromo_temp[current_rank][:]) #create list in list
+        chromo_elit += chromo_temp[current_rank]
+        current_rank += 1
         pre_ind = current_ind
         current_ind = current_ind + len(chromo_temp[current_rank])
     
     elit_temp = sorted(chromo_temp[current_rank],key = lambda x:x.crowding,reverse = False)
-    chromo_elit.append(elit_temp[0:(pop_num-1) - pre_ind])
+    #chromo_elit.append(elit_temp[0:(pop_num-1) - pre_ind]) #create list in list
+    chromo_elit += elit_temp[0:(pop_num-1)-pre_ind]
     '''
     for pareto_rank in range(len(chromo_temp)):
         current_ind = current_ind + len(chromo_temp[pareto_rank])
@@ -311,16 +320,16 @@ def tournament_selection(chromo):
     return tournament_chromo
 
 def cross_mutation(chromo,x_num,x_max,x_min):
-    pc = 1
-    pm = 0.1
-    n = 1
+    pc = 0.5
+    pm = 1/x_num
+    n = 2
     fun_name = 'ZDT1'
     chromo_len = len(chromo)
     x1_c_chromo = []
     x2_c_chromo = []
     v1_c_chromo = []
     v2_c_chromo = []
-    chromo_cross_mutation = []
+    chromo_cross_mutation = copy.deepcopy(chromo, None, [])
     for i in range(chromo_len//2):
         x1_index = int(round((chromo_len-1) * random.random()))
         x2_index = int(round((chromo_len-1) * random.random()))
@@ -328,6 +337,7 @@ def cross_mutation(chromo,x_num,x_max,x_min):
             x2_index = int(round((chromo_len-1) * random.random()))
         #x1_f_chromo = copy.deepcopy(chromo[x1_index], None, [])
         #x2_f_chromo = copy.deepcopy(chromo[x2_index], None, [])
+        
         x1_f_chromo = chromo[x1_index].var
         x2_f_chromo = chromo[x2_index].var
         if random.random()<pc:
@@ -375,9 +385,9 @@ def cross_mutation(chromo,x_num,x_max,x_min):
                 elif x2_c_chromo[j] < x_min:
                     x2_c_chromo[j] = x_min
             v2_c_chromo = obj_fun(x2_c_chromo, x_num, fun_name)
-        chromo[x1_index].value = v1_c_chromo
-        chromo[x2_index].value = v2_c_chromo
-    return chromo
+        chromo_cross_mutation[x1_index].value = v1_c_chromo
+        chromo_cross_mutation[x2_index].value = v2_c_chromo
+    return chromo_cross_mutation
 def obj_fun(x, x_num, fun_name):
     if operator.eq(fun_name, 'ZDT1'):
         f = []
@@ -410,22 +420,25 @@ if __name__ == "__main__":
     x_num = 100
     f_num = 2
     fun_name = 'ZDT1'
-    pop_num = 2
-    gen = 100
+    pop_num = 100
+    gen = 10
+    value_output = []
     
     chromo = Chromo(pop_num, x_min, x_max, x_num, f_num, fun_name)
     chromo_domi = non_dominate_sort(chromo.pop_asm, f_num)
     chromo_domi_crowding = crowding_distance_sort(chromo_domi, f_num)
     chromo_select = tournament_selection(chromo.pop_asm)
-    chromo_cross_mutation = cross_mutation(chromo_select, x_num, x_max, x_min)
+    chromo_result = cross_mutation(chromo_select, x_num, x_max, x_min)
     for i in range(gen):
-        chromo_parent = tournament_selection(chromo_cross_mutation)
+        chromo_parent = tournament_selection(chromo_result)
         chromo_offspring = cross_mutation(chromo_parent, x_num, x_max, x_min)
-        chromo_combine = chromo_parent+chromo_offspring
+        chromo_combine = chromo_parent + chromo_offspring
         chromo1_combine = non_dominate_sort(chromo_combine, f_num)
         chromo2_combine = crowding_distance_sort(chromo1_combine, f_num)
         chromo_result = elitsm(pop_num, chromo2_combine)
         if i % 10 == 0:
             print('%d generation has completed!' % i)
-    if f_num == 2:
-        plt.plot(chromo_result.value[1],chromo_result.value[2])
+    for f in range(f_num):
+        value_output.append([chromo_result[i].value[f] for i in range(len(chromo_result))])
+    plt.scatter(value_output[0], value_output[1])
+    plt.show()
